@@ -108,7 +108,7 @@ javascript:(()=>{fetch('https://github.com/ciberweaboo/cats/raw/main/cats.user.j
 |Pashto|ps|
 |Persian|fa|
 |Polish|pl|
-|Portuguese (Portugal| Brazil)|pt|
+|Portuguese (Portugal Brazil)|pt|
 |Punjabi|pa|
 |Quechua|qu|
 |Romanian|ro|
