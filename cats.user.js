@@ -331,6 +331,7 @@ function init() {
                     } else {
                         // List of supported languages (keys of languageNames object)
                         const titleColor = Player.LabelColor || "#000000"; // Default to orange if Player.LabelColor is undefined
+                        const targetLang = Player.OnlineSettings.CATS.targetLang;
                         ChatRoomSendLocal(
                             `<style>
                             .language-option {
@@ -345,7 +346,7 @@ function init() {
                             text-shadow: 2px 2px 4px ${titleColor}; /* Enhanced shadow on hover */
                             }
                             </style>
-                            Target language ${sourceLang} is not available.<br>
+                            Target language ${targetLang} is not available.<br>
                             Supported languages: [` +
                             Object.entries(languageNames)
                                 .map(([key, name]) => {
@@ -385,6 +386,7 @@ function init() {
                         Catsify();
                     } else {
                         const titleColor = Player.LabelColor || "#000000"; // Default to orange if Player.LabelColor is undefined
+                        const sourceLang = Player.OnlineSettings.CATS.sourceLang;
                         ChatRoomSendLocal(
                             `<style>
                             .language-option {
@@ -432,18 +434,18 @@ function setLanguage(lang, sORl) {
         // Retrieve the full language name from the map
         const fullLangName = languageNames[lang];
         // Send confirmation message with code and full name
-        ChatRoomSendLocal(`Source language set to [${sourceLang.toUpperCase()}] (${fullLangName})`, 3000);
+        ChatRoomSendLocal(`Source language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
     } else if (sORl === "t") {
         Player.OnlineSettings.CATS.targetLang = lang;
         quickForcedOnlineSettingsUpdate();
         // Retrieve the full language name from the languageNames map
         const fullLangName = languageNames[lang];
         // Send confirmation message with code and full name
-        ChatRoomSendLocal(`Target language set to [${targetLang.toUpperCase()}] (${fullLangName})`, 3000);
+        ChatRoomSendLocal(`Target language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
     } else {
         ChatRoomSendLocal("Something is really wrong", 3000);
     }
-    catsify();
+    Catsify();
 }
 
 function Catsify() {
