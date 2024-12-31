@@ -6,7 +6,7 @@ Click [Here](https://github.com/ciberweaboo/cats/raw/main/cats.user.js) to insta
 Commands:
 - /ttoggle                It toggles On or Off the translator.
 - /tlang [langcode]       It changes the output language.
-- /tsource [langcode]     It changes the source language.
+- /slang [langcode]       It changes the source language.
 
 Bookmark:
 ```js
