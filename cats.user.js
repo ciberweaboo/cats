@@ -182,10 +182,7 @@ async function translate(message, sl, tl) {
         } catch (e) {
             console.warn("CATS: Translation phase(2) failed: " + e);
         }
-        //handle returns for gagged players
-        if (SpeechGetTotalGagLevel(Player) > 1 && !message.startsWith("(")) {
-            return message;
-        } else if (response[6]) {
+        if (response[6]) {
             if (response[6] > 0.36 && response[6] < 0.4) {
                 return message;
             }
@@ -244,6 +241,21 @@ function init() {
         if ((message.Type === "Chat" || message.Type === "Whisper" || message.Type === "Action" || message.Type === "Emote") && message.Sender !== Player.MemberNumber && Player.OnlineSettings.CATS.enabled) {
             var sourceMessage = message.Content;
             if (message.Content == "ServerDisconnect" || message.Content == "ServerLeave") { return next(args); }
+            const SenderCharacter = ChatRoomCharacter.find(C => C.MemberNumber == message.Sender);
+            if (SpeechGetTotalGagLevel(SenderCharacter) > 1) { return next(args); }
+            //avoid html injection
+            if (sourceMessage) {
+                //add "\" infront of all html elements like: <, >, /, ", ' , & , ` and \ to prevent html injection
+                sourceMessage = sourceMessage
+                .replace(/\\/g, "\\")
+                .replace(/</g, "\<")
+                .replace(/>/g, "\>")
+                .replace(/\//g, "\/")
+                .replace(/"/g, "\"")
+                .replace(/'/g, "\'")
+                .replace(/&/g, "\&")
+                .replace(/`/g, "\`");
+            }
             try {
                 // Translate the message
                 var finalMessage = await translate(sourceMessage, Player.OnlineSettings.CATS.sourceLang, Player.OnlineSettings.CATS.targetLang);
@@ -258,7 +270,6 @@ function init() {
                             if (sourceMessage.startsWith("*")) {
                                 sourceMessage2 = sourceMessage2.substring(1);
                             } else {
-                                const SenderCharacter = ChatRoomCharacter.find(C => C.MemberNumber == message.Sender);
                                 sourceMessage2 = CharacterNickname(SenderCharacter) +" "+ sourceMessage2;
                             }
                             languagePart = languagePart.replace(sourceMessage, sourceMessage2);
@@ -317,48 +328,50 @@ function init() {
             Tag: "tlang",
             Action: (targetLang) => {
                 if (targetLang) {
-                    // Check if the targetLang exists in the languageNames object
-                    if (languageNames.hasOwnProperty(targetLang)) {
+                    // Check if the targetLang is not "auto" and exists in the languageNames object
+                    if (targetLang.toLowerCase() !== "auto" && languageNames.hasOwnProperty(targetLang)) {
                         Player.OnlineSettings.CATS.targetLang = targetLang;
                         quickForcedOnlineSettingsUpdate();
-
+        
                         // Retrieve the full language name from the languageNames map
                         const fullLangName = languageNames[targetLang];
-
+        
                         // Send confirmation message with code and full name
                         ChatRoomSendLocal(`Target language set to [${targetLang.toUpperCase()}] (${fullLangName})`, 3000);
                         Catsify();
                     } else {
-                        // List of supported languages (keys of languageNames object)
-                        const titleColor = Player.LabelColor || "#000000"; // Default to orange if Player.LabelColor is undefined
-                        const targetLang = Player.OnlineSettings.CATS.targetLang;
+                        // Handle the case where the targetLang is "auto" or not valid
+                        const titleColor = Player.LabelColor || "#000000"; // Default to black if Player.LabelColor is undefined
+        
+                        // Filter out the "auto" entry from the languageNames
+                        const availableLanguages = Object.entries(languageNames)
+                            .filter(([key, name]) => key !== "auto") // Exclude "auto"
+                            .map(([key, name]) => {
+                                return `<span 
+                                            class="language-option" 
+                                            data-lang="${key}" 
+                                            onclick="setLanguage('${key}', 't')" 
+                                            style="display: inline; margin-right: 5px;"
+                                        >
+                                        ${key}
+                                        </span>`;
+                            }).join(", ");
                         ChatRoomSendLocal(
                             `<style>
                             .language-option {
                             cursor: pointer;
-                            text-shadow: 1px 1px 2px ${titleColor}; /* Use dynamic color for shadow */
+                            text-shadow: 1px 1px 2px ${titleColor};
                             transition: text-shadow 0.2s;
-                            display: inline; /* Ensure inline display */
-                            margin-right: 5px; /* Add spacing between options */
-                            white-space: nowrap; /* Prevent wrapping */
+                            display: inline;
+                            margin-right: 5px;
+                            white-space: nowrap;
                             }
                             .language-option:hover {
-                            text-shadow: 2px 2px 4px ${titleColor}; /* Enhanced shadow on hover */
+                            text-shadow: 2px 2px 4px ${titleColor};
                             }
                             </style>
                             Target language ${targetLang} is not available.<br>
-                            Supported languages: [` +
-                            Object.entries(languageNames)
-                                .map(([key, name]) => {
-                                    return `<span 
-                                            class="language-option" 
-                                            data-lang="${key}" 
-                                            onclick="setLanguage('${key}', 't')" 
-                                            style="display: inline; margin-right: 5px;" /* Inline style fallback */
-                                            >
-                                            ${key}
-                                            </span>`;
-                                }).join(", ") + "]",
+                            Supported languages: [${availableLanguages}]`,
                             10000);
                         Catsify();
                     }
@@ -373,57 +386,54 @@ function init() {
             Tag: "slang",
             Action: (sourceLang) => {
                 if (sourceLang) {
-                    // Check if the language code exists in the languageNames object
+                    // Check if the sourceLang exists in the languageNames object
                     if (languageNames.hasOwnProperty(sourceLang)) {
                         Player.OnlineSettings.CATS.sourceLang = sourceLang;
                         quickForcedOnlineSettingsUpdate();
-
-                        // Retrieve the full language name from the map
+                        
+                        // Retrieve the full language name from the languageNames map
                         const fullLangName = languageNames[sourceLang];
-
+                        
                         // Send confirmation message with code and full name
                         ChatRoomSendLocal(`Source language set to [${sourceLang.toUpperCase()}] (${fullLangName})`, 3000);
                         Catsify();
                     } else {
-                        const titleColor = Player.LabelColor || "#000000"; // Default to orange if Player.LabelColor is undefined
-                        const sourceLang = Player.OnlineSettings.CATS.sourceLang;
+                        // Fallback for invalid sourceLang input
+                        const titleColor = Player.LabelColor || "#000000"; // Default color
+                        const availableLanguages = Object.entries(languageNames)
+                            .map(([key, name]) => {
+                                return `<span class="language-option" data-lang="${key}" onclick="setLanguage('${key}', 's')" style="display: inline; margin-right: 5px;">
+                                            ${key}
+                                        </span>`;
+                            })
+                            .join(", ");
                         ChatRoomSendLocal(
                             `<style>
-                            .language-option {
-                            cursor: pointer;
-                            text-shadow: 1px 1px 2px ${titleColor}; /* Use dynamic color for shadow */
-                            transition: text-shadow 0.2s;
-                            display: inline; /* Ensure inline display */
-                            margin-right: 5px; /* Add spacing between options */
-                            white-space: nowrap; /* Prevent wrapping */
-                            }
-                            .language-option:hover {
-                            text-shadow: 2px 2px 4px ${titleColor}; /* Enhanced shadow on hover */
-                            }
+                                .language-option {
+                                    cursor: pointer;
+                                    text-shadow: 1px 1px 2px ${titleColor};
+                                    transition: text-shadow 0.2s;
+                                    display: inline;
+                                    margin-right: 5px;
+                                    white-space: nowrap;
+                                }
+                                .language-option:hover {
+                                    text-shadow: 2px 2px 4px ${titleColor};
+                                }
                             </style>
                             Source language ${sourceLang} is not available.<br>
-                            Supported languages: [` +
-                            Object.entries(languageNames)
-                                .map(([key, name]) => {
-                                    return `<span 
-                                            class="language-option" 
-                                            data-lang="${key}" 
-                                            onclick="setLanguage('${key}', 's')" 
-                                            style="display: inline; margin-right: 5px;" /* Inline style fallback */
-                                            >
-                                            ${key}
-                                            </span>`;
-                                }).join(", ") + "]",
+                            Supported languages: [${availableLanguages}]`,
                             10000);
                         Catsify();
                     }
                 } else {
+                    // If no sourceLang is provided
                     ChatRoomSendLocal("No source lang provided", 3000);
                     Catsify();
                 }
             },
             Description: "Change the source language of CATS."
-        }
+        }        
     ])
 }
 
@@ -431,16 +441,12 @@ function setLanguage(lang, sORl) {
     if (sORl === "s") {
         Player.OnlineSettings.CATS.sourceLang = lang;
         quickForcedOnlineSettingsUpdate();
-        // Retrieve the full language name from the map
         const fullLangName = languageNames[lang];
-        // Send confirmation message with code and full name
         ChatRoomSendLocal(`Source language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
     } else if (sORl === "t") {
         Player.OnlineSettings.CATS.targetLang = lang;
         quickForcedOnlineSettingsUpdate();
-        // Retrieve the full language name from the languageNames map
         const fullLangName = languageNames[lang];
-        // Send confirmation message with code and full name
         ChatRoomSendLocal(`Target language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
     } else {
         ChatRoomSendLocal("Something is really wrong", 3000);
