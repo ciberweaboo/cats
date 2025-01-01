@@ -158,6 +158,7 @@ const languageNames = {
     "yo": "Yoruba",
     "zu": "Zulu"
 };
+window.languageNames = languageNames;
 
 //rework for CATS
 async function translate(message, sl, tl) {
@@ -234,13 +235,14 @@ function init() {
             OnlineSettings: Player.OnlineSettings
         }, true);
     }
+    window.quickForcedOnlineSettingsUpdate = quickForcedOnlineSettingsUpdate;
 
     // Updated for clean HTML and handling
     CATS.hookFunction("ChatRoomMessage", 0, async (args, next) => {
         var message = args[0];
         if ((message.Type === "Chat" || message.Type === "Whisper" || message.Type === "Action" || message.Type === "Emote") && message.Sender !== Player.MemberNumber && Player.OnlineSettings.CATS.enabled) {
             var sourceMessage = message.Content;
-            if (message.Content == "ServerDisconnect" || message.Content == "ServerLeave") { return next(args); }
+            if (message.Content == "ServerDisconnect" || message.Content == "ServerLeave" || message.Content == "Beep") { return next(args); }
             const SenderCharacter = ChatRoomCharacter.find(C => C.MemberNumber == message.Sender);
             if (SpeechGetTotalGagLevel(SenderCharacter) > 1) { return next(args); }
             //avoid html injection
@@ -453,6 +455,7 @@ function setLanguage(lang, sORl) {
     }
     Catsify();
 }
+window.setLanguage = setLanguage;
 
 function Catsify() {
     setTimeout(() => {
