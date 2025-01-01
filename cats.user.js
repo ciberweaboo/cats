@@ -160,6 +160,93 @@ const languageNames = {
 };
 window.languageNames = languageNames;
 
+function setLanguage(lang, sORl) {
+    if (sORl === "s") {
+        Player.OnlineSettings.CATS.sourceLang = lang;
+        quickForcedOnlineSettingsUpdate();
+        const fullLangName = languageNames[lang];
+        ChatRoomSendLocal(`Source language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
+    } else if (sORl === "t") {
+        Player.OnlineSettings.CATS.targetLang = lang;
+        quickForcedOnlineSettingsUpdate();
+        const fullLangName = languageNames[lang];
+        ChatRoomSendLocal(`Target language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
+    } else {
+        ChatRoomSendLocal("Something is really wrong", 3000);
+    }
+    Catsify();
+}
+window.setLanguage = setLanguage;
+
+function Catsify() {
+    setTimeout(() => {
+        const messages = document.querySelectorAll('.ChatMessageLocalMessage');
+        if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+
+            // Add a "background" container for the emojis
+            const emojiBackground = document.createElement('div');
+            emojiBackground.style.position = "absolute";
+            emojiBackground.style.top = "-10%"; // Slightly extend above
+            emojiBackground.style.left = "-10%"; // Slightly extend left
+            emojiBackground.style.width = "120%"; // Extend width to ensure full coverage
+            emojiBackground.style.height = "120%"; // Extend height to ensure full coverage
+            emojiBackground.style.pointerEvents = "none"; // So it doesn't interfere with clicks
+            emojiBackground.style.overflow = "hidden";
+            emojiBackground.style.zIndex = "0"; // Ensure it stays behind the text
+
+            // Create a sparse grid of emojis
+            const rows = 3; // Fewer rows for less density
+            const cols = 6; // Fewer columns for less density
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (Math.random() < 0.3) { // 30% chance for an emoji (reduced probability)
+                        const emoji = document.createElement('span');
+                        emoji.textContent = Math.random() > 0.5 ? "🐱" : "🐾"; // Alternate between emojis
+                        emoji.style.position = "absolute";
+                        emoji.style.fontSize = "1em"; // Keep them small to avoid distraction
+                        emoji.style.opacity = "0.3"; // Slightly ghosted appearance
+                        emoji.style.transform = `translate(-50%, -50%)`; // Center emojis on the grid points
+
+                        // Place the emoji in a grid-like fashion
+                        emoji.style.top = `${(row + 0.5) * (100 / rows)}%`;
+                        emoji.style.left = `${(col + 0.5) * (100 / cols)}%`;
+
+                        emojiBackground.appendChild(emoji);
+                    }
+                }
+            }
+
+            // Convert Player.LabelColor (hex) to rgba with transparency
+            const hexColor = Player.LabelColor || "#000000"; // Default to black if no LabelColor is set
+            const rgbaColor = hexToRgba(hexColor, 0.1);
+
+            // Insert the emoji background and set the message to relative positioning
+            lastMessage.style.position = "relative";
+            lastMessage.appendChild(emojiBackground);
+
+            // Set the background color using the calculated rgba value
+            lastMessage.style.backgroundColor = rgbaColor;
+        }
+    }, 10);
+}
+
+// Helper function to convert hex to rgba
+function hexToRgba(hex, alpha) {
+    // Remove the '#' if present
+    hex = hex.replace(/^#/, "");
+
+    // Parse r, g, b values
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+
+    // Return rgba string with specified alpha
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    // Example: rgba(255, 165, 0, 0.1)
+}
+
 //rework for CATS
 async function translate(message, sl, tl) {
     //quick return if source and target languages are the same
@@ -220,6 +307,13 @@ function initWait() {
     }
 }
 
+function quickForcedOnlineSettingsUpdate() {
+    ServerAccountUpdate.QueueData({
+        OnlineSettings: Player.OnlineSettings
+    }, true);
+}
+window.quickForcedOnlineSettingsUpdate = quickForcedOnlineSettingsUpdate;
+
 function init() {
     if (!Player?.OnlineSettings?.CATS) {
         Player.OnlineSettings.CATS = {
@@ -230,19 +324,12 @@ function init() {
         quickForcedOnlineSettingsUpdate();
     }
 
-    function quickForcedOnlineSettingsUpdate() {
-        ServerAccountUpdate.QueueData({
-            OnlineSettings: Player.OnlineSettings
-        }, true);
-    }
-    window.quickForcedOnlineSettingsUpdate = quickForcedOnlineSettingsUpdate;
-
     // Updated for clean HTML and handling
     CATS.hookFunction("ChatRoomMessage", 0, async (args, next) => {
         var message = args[0];
-        if ((message.Type === "Chat" || message.Type === "Whisper" || message.Type === "Action" || message.Type === "Emote") && message.Sender !== Player.MemberNumber && Player.OnlineSettings.CATS.enabled) {
+        if ((message.Type === "Chat" || message.Type === "Whisper"/* || message.Type === "Action" */|| message.Type === "Emote") && message.Sender !== Player.MemberNumber && Player.OnlineSettings.CATS.enabled) {
             var sourceMessage = message.Content;
-            if (message.Content == "ServerDisconnect" || message.Content == "ServerLeave" || message.Content == "Beep") { return next(args); }
+            //if (message.Content == "ServerDisconnect" || message.Content == "ServerLeave" || message.Content == "Beep") { return next(args); }
             const SenderCharacter = ChatRoomCharacter.find(C => C.MemberNumber == message.Sender);
             if (SpeechGetTotalGagLevel(SenderCharacter) > 1) { return next(args); }
             //avoid html injection
@@ -296,9 +383,6 @@ function init() {
             return next(args);
         }
     });
-
-
-
 
     CommandCombine([
         {
@@ -437,93 +521,6 @@ function init() {
             Description: "Change the source language of CATS."
         }        
     ])
-}
-
-function setLanguage(lang, sORl) {
-    if (sORl === "s") {
-        Player.OnlineSettings.CATS.sourceLang = lang;
-        quickForcedOnlineSettingsUpdate();
-        const fullLangName = languageNames[lang];
-        ChatRoomSendLocal(`Source language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
-    } else if (sORl === "t") {
-        Player.OnlineSettings.CATS.targetLang = lang;
-        quickForcedOnlineSettingsUpdate();
-        const fullLangName = languageNames[lang];
-        ChatRoomSendLocal(`Target language set to [${lang.toUpperCase()}] (${fullLangName})`, 3000);
-    } else {
-        ChatRoomSendLocal("Something is really wrong", 3000);
-    }
-    Catsify();
-}
-window.setLanguage = setLanguage;
-
-function Catsify() {
-    setTimeout(() => {
-        const messages = document.querySelectorAll('.ChatMessageLocalMessage');
-        if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-
-            // Add a "background" container for the emojis
-            const emojiBackground = document.createElement('div');
-            emojiBackground.style.position = "absolute";
-            emojiBackground.style.top = "-10%"; // Slightly extend above
-            emojiBackground.style.left = "-10%"; // Slightly extend left
-            emojiBackground.style.width = "120%"; // Extend width to ensure full coverage
-            emojiBackground.style.height = "120%"; // Extend height to ensure full coverage
-            emojiBackground.style.pointerEvents = "none"; // So it doesn't interfere with clicks
-            emojiBackground.style.overflow = "hidden";
-            emojiBackground.style.zIndex = "0"; // Ensure it stays behind the text
-
-            // Create a sparse grid of emojis
-            const rows = 3; // Fewer rows for less density
-            const cols = 6; // Fewer columns for less density
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    if (Math.random() < 0.3) { // 30% chance for an emoji (reduced probability)
-                        const emoji = document.createElement('span');
-                        emoji.textContent = Math.random() > 0.5 ? "🐱" : "🐾"; // Alternate between emojis
-                        emoji.style.position = "absolute";
-                        emoji.style.fontSize = "1em"; // Keep them small to avoid distraction
-                        emoji.style.opacity = "0.3"; // Slightly ghosted appearance
-                        emoji.style.transform = `translate(-50%, -50%)`; // Center emojis on the grid points
-
-                        // Place the emoji in a grid-like fashion
-                        emoji.style.top = `${(row + 0.5) * (100 / rows)}%`;
-                        emoji.style.left = `${(col + 0.5) * (100 / cols)}%`;
-
-                        emojiBackground.appendChild(emoji);
-                    }
-                }
-            }
-
-            // Convert Player.LabelColor (hex) to rgba with transparency
-            const hexColor = Player.LabelColor || "#000000"; // Default to black if no LabelColor is set
-            const rgbaColor = hexToRgba(hexColor, 0.1);
-
-            // Insert the emoji background and set the message to relative positioning
-            lastMessage.style.position = "relative";
-            lastMessage.appendChild(emojiBackground);
-
-            // Set the background color using the calculated rgba value
-            lastMessage.style.backgroundColor = rgbaColor;
-        }
-    }, 10);
-}
-
-// Helper function to convert hex to rgba
-function hexToRgba(hex, alpha) {
-    // Remove the '#' if present
-    hex = hex.replace(/^#/, "");
-
-    // Parse r, g, b values
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-
-    // Return rgba string with specified alpha
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    // Example: rgba(255, 165, 0, 0.1)
 }
 
 initWait();
