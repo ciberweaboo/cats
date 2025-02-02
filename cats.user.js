@@ -284,7 +284,7 @@ async function translate(message, sl, tl) {
         return `${safetySpace}[<span style="cursor: pointer; 
         color: ${Player.LabelColor || '#000000'}; 
         text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8), 0px 0px 5px rgba(0, 0, 0, 0.3);" 
-        onclick="ChatRoomSendLocal('Original ${languageNames[response[2]]} message: ${encodeURIComponent(message)}', 3000),Catsify()" 
+        onclick="ChatRoomSendLocal('Original ${languageNames[response[2]]} message: ' + decodeURIComponent('${encodeURIComponent(message)}'), 3000),Catsify()" 
         title="Click to see the original message">${response[2]}</span> > ${tl}]${response[0][0][0]}`;
 
     } catch (e) {
@@ -336,14 +336,14 @@ function init() {
             if (sourceMessage) {
                 //add "\" infront of all html elements like: <, >, /, ", ' , & , ` and \ to prevent html injection
                 sourceMessage = sourceMessage
-                .replace(/\\/g, "&#92;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/\//g, "&#x2F;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#x27;")
-                .replace(/&/g, "&amp;")
-                .replace(/`/g, "&#96;");
+                .replace(/\\/g, "&#92;")//works
+                .replace(/</g, "&lt;")//doesn't work || doesn't show up || under testing
+                .replace(/>/g, "&gt;")//works
+                .replace(/\//g, "&#x2F;")//works
+                .replace(/"/g, "&quot;")//crashes || under testing
+                .replace(/'/g, "&#x27;")//works
+                .replace(/&/g, "&amp;")//works
+                .replace(/`/g, "&#96;");//works
             }
             try {
                 // Translate the message
