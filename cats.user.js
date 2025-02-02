@@ -336,14 +336,14 @@ function init() {
             if (sourceMessage) {
                 //add "\" infront of all html elements like: <, >, /, ", ' , & , ` and \ to prevent html injection
                 sourceMessage = sourceMessage
-                .replace(/\\/g, "\\\\")
-                .replace(/</g, "\\<")
-                .replace(/>/g, "\\>")
-                .replace(/\//g, "\\/")
-                .replace(/"/g, "\\\"")
-                .replace(/'/g, "\\'")
-                .replace(/&/g, "\\&")
-                .replace(/`/g, "\\`");
+                .replace(/\\/g, "&#92;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\//g, "&#x2F;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#x27;")
+                .replace(/&/g, "&amp;")
+                .replace(/`/g, "&#96;");
             }
             try {
                 // Translate the message
