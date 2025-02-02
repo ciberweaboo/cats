@@ -343,7 +343,6 @@ function init() {
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#39;")
                 .replace(/`/g, "&#96;");
-                sourceMessage = encodeURIComponent(sourceMessage);
             }
             try {
                 // Translate the message
