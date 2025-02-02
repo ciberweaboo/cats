@@ -334,16 +334,15 @@ function init() {
             if (SpeechGetTotalGagLevel(SenderCharacter) > 1) { return next(args); }
             //avoid html injection
             if (sourceMessage) {
-                //add "\" infront of all html elements like: <, >, /, ", ' , & , ` and \ to prevent html injection
                 sourceMessage = sourceMessage
-                .replace(/\\/g, "\\")
-                .replace(/</g, "<")
-                .replace(/>/g, ">")
-                .replace(/\//g, "/")
-                .replace(/"/g, '"')
-                .replace(/'/g, "")
-                .replace(/&/g, "&")
-                .replace(/`/g, "`");
+                .replace(/&/g, "&amp;")  // Must be first to avoid double-encoding
+                .replace(/\\/g, "&#92;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\//g, "&#47;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;")
+                .replace(/`/g, "&#96;");
                 sourceMessage = encodeURIComponent(sourceMessage);
             }
             try {
