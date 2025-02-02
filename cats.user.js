@@ -336,18 +336,19 @@ function init() {
             if (sourceMessage) {
                 //add "\" infront of all html elements like: <, >, /, ", ' , & , ` and \ to prevent html injection
                 sourceMessage = sourceMessage
-                .replace(/\\/g, "&#92;")//works
-                .replace(/</g, "&lt;")//doesn't work || doesn't show up || under testing
-                .replace(/>/g, "&gt;")//works
-                .replace(/\//g, "&#x2F;")//works
-                .replace(/"/g, "&quot;")//crashes || under testing
-                .replace(/'/g, "&#x27;")//works
-                .replace(/&/g, "&amp;")//works
-                .replace(/`/g, "&#96;");//works
+                .replace(/\\/g, "\\")
+                .replace(/</g, "<")
+                .replace(/>/g, ">")
+                .replace(/\//g, "/")
+                .replace(/"/g, '"')
+                .replace(/'/g, "")
+                .replace(/&/g, "&")
+                .replace(/`/g, "`");
+                sourceMessage = encodeURIComponent(sourceMessage);
             }
             try {
                 // Translate the message
-                var finalMessage = await translate(sourceMessage, Player.OnlineSettings.CATS.sourceLang, Player.OnlineSettings.CATS.targetLang);
+                var finalMessage = await translate(decodeURIComponent(sourceMessage), Player.OnlineSettings.CATS.sourceLang, Player.OnlineSettings.CATS.targetLang);
                 // Split the response into two parts: the HTML language part and the translated message
                 if (finalMessage.startsWith(" ")) {
                     var translationInfo = finalMessage.split("]");
